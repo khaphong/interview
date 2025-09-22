@@ -14,7 +14,9 @@
 ```python
 import logging
 import time
+from decimal import Decimal
 from typing import Protocol
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,11 +31,11 @@ class EmailSendingError(Exception): ...
 
 
 class PaymentProcessor(Protocol):
-    def process_payment(self, amount: float, card_number: str) -> str: ...
+    def process_payment(self, amount: Decimal, card_number: str) -> str: ...
 
 
 class StripePaymentProcessor:
-    def process_payment(self, amount: float, card_number: str) -> str:
+    def process_payment(self, amount: Decimal, card_number: str) -> str:
         try:
             masked_card = f"****-****-****-{card_number[-4:]}"
             logger.info(f"Connecting to Stripe API...")
@@ -44,7 +46,7 @@ class StripePaymentProcessor:
 
 
 class EmailSender:
-    def send_confirmation(self, email: str, tx_id: str, amount: float) -> None:
+    def send_confirmation(self, email: str, tx_id: str, amount: Decimal) -> None:
         try:
             logger.info(f"Sending payment confirmation email to {email}")
         except Exception as e:
@@ -56,7 +58,7 @@ class TransactionService:
         self.payment_processor = payment_processor
         self.email_sender = email_sender
 
-    def process_transaction(self, amount: float, card_number: str, email: str) -> str:
+    def process_transaction(self, amount: Decimal, card_number: str, email: str) -> str:
         """Process transaction and send confirmation email."""
         tx_id = self.payment_processor.process_payment(amount, card_number)
         self.email_sender.send_confirmation(email, tx_id, amount)
@@ -69,7 +71,7 @@ def main():
     service = TransactionService(payment_processor, email_sender)
     try:
         tx_id = service.process_transaction(
-            99.99, "1234-5678-9012-3456", "customer@example.com"
+            Decimal("99.99"), "1234-5678-9012-3456", "customer@example.com"
         )
         logger.info(f"Transaction completed successfully: {tx_id}")
     except (PaymentProcessingError, EmailSendingError, ValueError) as e:

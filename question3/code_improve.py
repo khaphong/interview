@@ -1,5 +1,6 @@
 import logging
 import time
+from decimal import Decimal
 from typing import Protocol
 
 logging.basicConfig(level=logging.INFO)
@@ -15,11 +16,11 @@ class EmailSendingError(Exception): ...
 
 
 class PaymentProcessor(Protocol):
-    def process_payment(self, amount: float, card_number: str) -> str: ...
+    def process_payment(self, amount: Decimal, card_number: str) -> str: ...
 
 
 class StripePaymentProcessor:
-    def process_payment(self, amount: float, card_number: str) -> str:
+    def process_payment(self, amount: Decimal, card_number: str) -> str:
         try:
             masked_card = f"****-****-****-{card_number[-4:]}"
             logger.info(f"Connecting to Stripe API...")
@@ -30,7 +31,7 @@ class StripePaymentProcessor:
 
 
 class EmailSender:
-    def send_confirmation(self, email: str, tx_id: str, amount: float) -> None:
+    def send_confirmation(self, email: str, tx_id: str, amount: Decimal) -> None:
         try:
             logger.info(f"Sending payment confirmation email to {email}")
         except Exception as e:
@@ -42,7 +43,7 @@ class TransactionService:
         self.payment_processor = payment_processor
         self.email_sender = email_sender
 
-    def process_transaction(self, amount: float, card_number: str, email: str) -> str:
+    def process_transaction(self, amount: Decimal, card_number: str, email: str) -> str:
         """Process transaction and send confirmation email."""
         tx_id = self.payment_processor.process_payment(amount, card_number)
         self.email_sender.send_confirmation(email, tx_id, amount)
